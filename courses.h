@@ -71,24 +71,31 @@ public:
     ADD_TEXT add_text(const QJsonObject& text_obj);
 
     void set_lines(int left, int right) {left_ = left, right_ = right; }
+    void set_divided(int div) {divide_width_ = div; }
     void update_bottom();
 
-    bool is_under(int height) const {return height > vertical_expected_bottom_; }
+    bool is_under(int height) const;// {return height > vertical_expected_bottom_; }
+    int get_divide() const {return divide_width_; }
     int get_right() const {return right_; }
     int get_left() const {return left_; }
     int get_horizontal_left() const {return horizontal_text_left_; }
+    int get_horizontal_right() const {return horizontal_text_right_; }
     QString get_text() const {return text_; }
 
 private:
     QString text_;
     int lines_ = 0;
+    int divide_width_ = 1;
+    int text_height_;
 
     int left_;
     int right_;
 
     int horizontal_text_left_;
+    int horizontal_text_right_ = -1;
 
     int vertical_top_;
+    int vertical_bottom_;
     int vertical_text_center_[2];
     int vertical_expected_bottom_;
 };

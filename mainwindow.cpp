@@ -112,6 +112,7 @@ void MainWindow::networkData()
         //     int min_top = line_obj["MinTop"].toInt();
         //     qDebug() << text << left << min_top;
         // }
+        // qDebug() << "_____________________________";
         // break;
 
         // add Monday
@@ -151,23 +152,38 @@ void MainWindow::networkData()
         {
             QJsonObject line_obj = line.toObject(); // keys() = ("LineText", "MaxHeight", "MinTop", "Words")
 
-            int min_top = line_obj["MinTop"].toInt();
+            int min_top = line_obj["MinTop"].toInt();// + line_obj["MaxHeight"].toInt();
             QJsonArray words = line_obj["Words"].toArray();
             int left = words.first()["Left"].toInt();
 
-            if (left < days.begin()->first.get_left() && words.size()>1){
+            if ((left < days.begin()->first.get_left() && words.size()>1) || (words.first()["WordText"].toString() == "-")){
+                //qDebug() << "delete: " << words.first()["WordText"].toString();
                 words.erase(words.begin());
                 line_obj = QJsonObject{
-                    {"MaxHeihgt", line_obj["MaxHeight"].toInt()},
+                    {"LineText", line_obj["LineText"].toString()},
+                    {"MaxHeight", line_obj["MaxHeight"].toInt()},
                     {"MinTop", line_obj["MinTop"].toInt()},
                     {"Words", words}
                 };
                 left = words.first()["Left"].toInt();
-                qDebug() << "conversion";
             }
 
-            if (left>520)
-                continue;
+            if (words.last()["WordText"].toString() == "-"){
+                //qDebug() << "delete: " << words.last()["WordText"].toString();
+                words.erase(words.end());
+                line_obj = QJsonObject{
+                    {"LineText", line_obj["LineText"].toString()},
+                    {"MaxHeight", line_obj["MaxHeight"].toInt()},
+                    {"MinTop", line_obj["MinTop"].toInt()},
+                    {"Words", words}
+                };
+                left = words.first()["Left"].toInt();
+            }
+
+            // if (left>2757 || left<2062)
+            //     continue;
+            // if (left>520)
+            //     continue;
 
             for (auto& day: days){
 
@@ -177,6 +193,10 @@ void MainWindow::networkData()
                     }
                     else{
                         ADD_TEXT messange = ADD_TEXT::NEXT_COURSE;
+
+                        // text = line_obj["LineText"].toString();
+                        // if (text == "13:15, gr.3")
+                        //     qDebug() << 1;
 
                         for (auto it = day.second.begin(); it != day.second.end(); it++){
                             if ((*it)->is_under(min_top)){
@@ -190,15 +210,40 @@ void MainWindow::networkData()
                         }
 
                         if (messange == ADD_TEXT::NEXT_COURSE){
-                            int num_of_courses = day.second.size() + 1;
+                            int curr_courses = 0;
+                            if (day.second.size() > 0)
+                                curr_courses =  day.second.front()->get_divide();
+
+                            int num_of_courses = std::max(int(day.second.size() + 1), curr_courses);
                             int width = (day.first.get_right() - day.first.get_left()) / num_of_courses;
 
                             day.second.push_back(new Box(line_obj, day.first.get_right()-width, day.first.get_right()));
-                            std::sort(day.second.begin(), day.second.end(), box_compare_left);
 
-                            for (std::size_t i = 0; i<day.second.size(); i++){
-                                day.second[i]->set_lines(day.first.get_left()+width*i, day.first.get_left()+width*(i+1));
+                            bool is_correct = false;
+
+                            while (!is_correct){
+                                is_correct = true;
+                                std::sort(day.second.begin(), day.second.end(), box_compare_left);
+
+                                for (std::size_t i = 0; i<num_of_courses; i++){
+                                    if (i<day.second.size() && day.second[i]->get_horizontal_left() < day.first.get_left()+width*(i+1)){
+
+                                        if (day.second[i]->get_horizontal_left() >= day.first.get_left()+width*(i) &&
+                                            (day.second[i]->get_horizontal_right() <= day.first.get_left()+width*(i+1)) ){
+
+                                            day.second[i]->set_lines(day.first.get_left()+width*i, day.first.get_left()+width*(i+1));
+                                            day.second[i]->set_divided(num_of_courses);
+                                        }
+                                        else{
+                                            num_of_courses++;
+                                            width = (day.first.get_right() - day.first.get_left()) / num_of_courses;
+                                            is_correct = false;
+                                            break;
+                                        }
+                                    }
+                                }
                             }
+
 
                         }
 
@@ -220,10 +265,32 @@ void MainWindow::networkData()
             day.second.clear();
         }
 
+        qDebug() << "Poniedziałek";
         for (auto& box: temp_boxes){
             if (box->get_left() < 520)
                 qDebug() << box->get_text() << box->get_left() << box->get_right();
         }
+        qDebug() << "Wtorek";
+            for (auto& box: temp_boxes){
+            if (box->get_left() < 940 && box->get_left() >= 520)
+                qDebug() << box->get_text() << box->get_left() << box->get_right();
+        }
+            qDebug() << "Środa";
+            for (auto& box: temp_boxes){
+                if (box->get_left() < 1358 && box->get_left() >= 940)
+                    qDebug() << box->get_text() << box->get_left() << box->get_right();
+            }
+            qDebug() << "Czwartek";
+            for (auto& box: temp_boxes){
+                if (box->get_left() < 2060 && box->get_left() >= 1358)
+                    qDebug() << box->get_text() << box->get_left() << box->get_right();
+            }
+            qDebug() << "Piątek";
+            for (auto& box: temp_boxes){
+                if (box->get_left() < 2760 && box->get_left() >= 2060)
+                    qDebug() << box->get_text() << box->get_left() << box->get_right();
+            }
+
     }
 }
 
