@@ -57,7 +57,7 @@ void MainWindow::recognize()
     //multipart->append(partParameter("isTable", "true"));
     multipart->append(partParameter("scale", "true"));
     multipart->append(partParameter("isOverlayRequired","true"));
-    multipart->append(partParameter("apikey","helloworld")); // K82913451688957  helloworld
+    multipart->append(partParameter("apikey","helloworld")); //   helloworld
 
     QUrl api_url("https://api.ocr.space/parse/image");
 
