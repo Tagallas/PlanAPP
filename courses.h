@@ -6,6 +6,9 @@
 #include <map>
 #include <iostream>
 #include <math.h>
+#include <functional>
+#include <algorithm>
+#include <regex>
 
 enum class ADD_TEXT{
     CORRECT,
@@ -37,35 +40,37 @@ private:
     int center_;
 };
 
-struct CourseData
+struct AGHCourseData
 {
-    QString teacher;
-    QString room;
+public:
+    QString day;
+    QString group;
     QString time;
-    //WeekDay& day;
+    QString other_info;
+
 };
 
 class Course
 {
 public:
-    Course(const QString& name) : name_(name) {};
+    Course(const QString& name, const QString& type, const AGHCourseData& data) : name_(name) {types_[type].push_back(data); };
     ~Course() = default;
 
-    bool operator==(const QString& other) {return name_ == other; }
+    bool operator==(const QString& other);
+    operator QString() const;
 
-    void add_group(const QString& group, const QString& teacher, const QString& room, const QString& time, const QString& week);
-    void set_length(int length) {length_ = length; }
+    void print() const;
+    void add_group(const QString& type, const AGHCourseData& data);
 
 private:
     QString name_;
-    std::map<QString, CourseData*> groups;
-    int length_;
+    std::map<QString, std::vector<AGHCourseData>> types_;
 };
 
 class Box
 {
 public:
-    Box(const QJsonObject& text_obj, int left, int right);
+    Box(const QJsonObject& text_obj, int left, int right, QString day);
     ~Box() = default;
 
     ADD_TEXT add_text(const QJsonObject& text_obj);
@@ -80,10 +85,13 @@ public:
     int get_left() const {return left_; }
     int get_horizontal_left() const {return horizontal_text_left_; }
     int get_horizontal_right() const {return horizontal_text_right_; }
-    QString get_text() const {return text_; }
+    std::vector<QString> get_text() const {return text_; }
+    QString get_day() const {return day_; }
 
 private:
-    QString text_;
+    std::vector<QString> text_;
+    //QString text_;
+    QString day_;
     int lines_ = 0;
     int divide_width_ = 1;
     int text_height_;
@@ -100,6 +108,7 @@ private:
     int vertical_expected_bottom_;
 };
 
+void replace(std::string& str, const std::string& from, const std::string& to);
 
 
 

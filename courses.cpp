@@ -7,31 +7,64 @@ void WeekDay::update(WeekDay& previous_day)
     right_ = center_ + (center_ - left_);
 }
 
-void Course::add_group(const QString& group, const QString& teacher, const QString& room, const QString& time, const QString& week)
+bool Course::operator==(const QString& qother)
 {
-    CourseData* data = new CourseData;
-    data->room = room;
-    data->teacher = teacher;
-    data->time = time;
+    std::string name = name_.toStdString();
+    std::string other = qother.toStdString();
 
-    groups.insert({group, data});
+    replace(name, " i ", "");
+    replace(other, " i ", "");
+    replace(name, " ", "");
+    replace(other, " ", "");
+
+    bool corr = (name == other);
+    if (corr)
+        if (name_.size() > other.size())
+            name_ = qother;
+
+    return corr;
 }
 
-Box::Box(const QJsonObject& text_obj, int left, int right)
+Course::operator QString() const{
+
+    QString os =  "Course: " + name_ + "\n";
+    for (auto it = types_.begin(); it != types_.end(); ++it){
+        os += "\t" + it->first + ": \n";
+        for (const auto& course: it->second)
+            os += "\t\t" + course.day + ", " + course.group + ", " + course.time + ", " + course.other_info + "\n";
+    }
+
+    return os;
+}
+
+void Course::print() const{
+    qDebug() << "Course: " << name_;
+    for (auto it = types_.begin(); it != types_.end(); ++it){
+        qDebug() << "    " << it->first << ":";
+        for (const auto& course: it->second)
+            qDebug() << "        " << course.day << ", " << course.group << ", " << course.time << ", " << course.other_info;
+    }
+}
+
+void Course::add_group(const QString& type, const AGHCourseData& data)
+{
+    types_[type].push_back(data);
+}
+
+Box::Box(const QJsonObject& text_obj, int left, int right, QString day)
 {
     int height = text_obj["MaxHeight"].toInt();
     int min_top = text_obj["MinTop"].toInt();
     QJsonArray words = text_obj["Words"].toArray();
     int text_left = words.first()["Left"].toInt();
     int text_right = words.last()["Left"].toInt() + words.last()["Width"].toInt();
-    QString text = "";
     for (auto word: words){
-        text += word.toObject()["WordText"].toString() + " ";
+        text_.push_back(word.toObject()["WordText"].toString());
     }
 
+    day_ = day;
     left_ = left;
     right_ = right;
-    text_ = text;
     vertical_top_ = min_top + height;
     vertical_expected_bottom_ = INT_MAX;
     horizontal_text_left_ = text_left;
@@ -40,7 +73,6 @@ Box::Box(const QJsonObject& text_obj, int left, int right)
 
 ADD_TEXT Box::add_text(const QJsonObject& text_obj)
 {
-    QString new_text = text_obj["LineText"].toString();
     int height = text_obj["MaxHeight"].toInt();
     int min_top = text_obj["MinTop"].toInt();
     QJsonArray words = text_obj["Words"].toArray();
@@ -52,8 +84,6 @@ ADD_TEXT Box::add_text(const QJsonObject& text_obj)
     }
 
     ADD_TEXT return_value = ADD_TEXT::CORRECT;
-    // int horizontal_center = left_ + (right_ - left_)/2;
-    // int text_horizontal_center = left + (right - left)/2;
 
     if (lines_ > 0 && (left > horizontal_text_right_ || right < horizontal_text_left_)){
         return ADD_TEXT::NEXT_COURSE;
@@ -79,7 +109,8 @@ ADD_TEXT Box::add_text(const QJsonObject& text_obj)
 
     this->update_bottom();
     lines_ += 1;
-    text_ = text_ +  " " + new_text;
+    for (auto word: words)
+        text_.push_back(word.toObject()["WordText"].toString());
 
     return return_value;
 }
@@ -91,4 +122,12 @@ void Box::update_bottom() {
 
 bool Box::is_under(int height) const {
     return (lines_ == 0 && height > vertical_expected_bottom_) || ( lines_ > 0 && height > vertical_bottom_ + text_height_*3);
+}
+
+void replace(std::string& str, const std::string& from, const std::string& to){
+    std::size_t found = str.find(from);
+    while (found != std::string::npos) {
+        str.replace(found, from.length(), to);
+        found = str.find(from);
+    }
 }

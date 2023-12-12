@@ -15,7 +15,22 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-/**
+void MainWindow::on_pushButton_pressed() {
+    setDisabled(true);
+    splash = new QSplashScreen();
+    splash->showMessage("Loading...");
+    splash->show();
+
+    recognize();
+}
+
+void MainWindow::exit(){
+    show();
+    setDisabled(false);
+}
+
+
+/*
  * @brief Function that sets proper format of the multipart message
  * @param key parameter required to send to API
  * @param value
@@ -28,7 +43,6 @@ QHttpPart partParameter(QString key, QString value) {
     part.setBody(value.toLatin1());
     return part;
 }
-
 
 void MainWindow::recognize()
 {
@@ -110,7 +124,7 @@ void MainWindow::networkData()
         //     QString text = line_obj["LineText"].toString();
         //     int left = line_obj["Words"].toArray().first()["Left"].toInt();
         //     int min_top = line_obj["MinTop"].toInt();
-        //     qDebug() << text << left << min_top;
+        //     qDebug() << text << line_obj["Words"].toArray().size();// << left << min_top;
         // }
         // qDebug() << "_____________________________";
         // break;
@@ -152,12 +166,12 @@ void MainWindow::networkData()
         {
             QJsonObject line_obj = line.toObject(); // keys() = ("LineText", "MaxHeight", "MinTop", "Words")
 
-            int min_top = line_obj["MinTop"].toInt();// + line_obj["MaxHeight"].toInt();
+            int min_top = line_obj["MinTop"].toInt();
             QJsonArray words = line_obj["Words"].toArray();
             int left = words.first()["Left"].toInt();
 
             if ((left < days.begin()->first.get_left() && words.size()>1) || (words.first()["WordText"].toString() == "-")){
-                //qDebug() << "delete: " << words.first()["WordText"].toString();
+
                 words.erase(words.begin());
                 line_obj = QJsonObject{
                     {"LineText", line_obj["LineText"].toString()},
@@ -169,7 +183,7 @@ void MainWindow::networkData()
             }
 
             if (words.last()["WordText"].toString() == "-"){
-                //qDebug() << "delete: " << words.last()["WordText"].toString();
+
                 words.erase(words.end());
                 line_obj = QJsonObject{
                     {"LineText", line_obj["LineText"].toString()},
@@ -182,14 +196,12 @@ void MainWindow::networkData()
 
             // if (left>2757 || left<2062)
             //     continue;
-            // if (left>520)
-            //     continue;
 
             for (auto& day: days){
 
                 if (left >= day.first.get_left() && left <= day.first.get_right()){
                     if (day.second.empty()){
-                        day.second.push_back(new Box(line_obj, day.first.get_left(), day.first.get_right()));
+                        day.second.push_back(new Box(line_obj, day.first.get_left(), day.first.get_right(), day.first.get_day()));
                     }
                     else{
                         ADD_TEXT messange = ADD_TEXT::NEXT_COURSE;
@@ -217,7 +229,7 @@ void MainWindow::networkData()
                             int num_of_courses = std::max(int(day.second.size() + 1), curr_courses);
                             int width = (day.first.get_right() - day.first.get_left()) / num_of_courses;
 
-                            day.second.push_back(new Box(line_obj, day.first.get_right()-width, day.first.get_right()));
+                            day.second.push_back(new Box(line_obj, day.first.get_right()-width, day.first.get_right(), day.first.get_day()));
 
                             bool is_correct = false;
 
@@ -243,8 +255,6 @@ void MainWindow::networkData()
                                     }
                                 }
                             }
-
-
                         }
 
                         if (messange == ADD_TEXT::ERROR){
@@ -265,33 +275,123 @@ void MainWindow::networkData()
             day.second.clear();
         }
 
-        qDebug() << "Poniedziałek";
-        for (auto& box: temp_boxes){
-            if (box->get_left() < 520)
-                qDebug() << box->get_text() << box->get_left() << box->get_right();
-        }
-        qDebug() << "Wtorek";
-            for (auto& box: temp_boxes){
-            if (box->get_left() < 940 && box->get_left() >= 520)
-                qDebug() << box->get_text() << box->get_left() << box->get_right();
-        }
-            qDebug() << "Środa";
-            for (auto& box: temp_boxes){
-                if (box->get_left() < 1358 && box->get_left() >= 940)
-                    qDebug() << box->get_text() << box->get_left() << box->get_right();
-            }
-            qDebug() << "Czwartek";
-            for (auto& box: temp_boxes){
-                if (box->get_left() < 2060 && box->get_left() >= 1358)
-                    qDebug() << box->get_text() << box->get_left() << box->get_right();
-            }
-            qDebug() << "Piątek";
-            for (auto& box: temp_boxes){
-                if (box->get_left() < 2760 && box->get_left() >= 2060)
-                    qDebug() << box->get_text() << box->get_left() << box->get_right();
+        // qDebug() << "Poniedziałek";
+        //     for (auto& box: temp_boxes){
+        //     if (box->get_left() < 520)
+        //         qDebug() << box->get_text() << box->get_left() << box->get_right();
+        // }
+        // qDebug() << "Wtorek";
+        // for (auto& box: temp_boxes){
+        //     if (box->get_left() < 940 && box->get_left() >= 520)
+        //         qDebug() << box->get_text() << box->get_left() << box->get_right();
+        // }
+        // qDebug() << "Środa";
+        //     for (auto& box: temp_boxes){
+        //     if (box->get_left() < 1358 && box->get_left() >= 940)
+        //         qDebug() << box->get_text() << box->get_left() << box->get_right();
+        // }
+        // qDebug() << "Czwartek";
+        // for (auto& box: temp_boxes){
+        //     if (box->get_left() < 2060 && box->get_left() >= 1358)
+        //         qDebug() << box->get_text() << box->get_left() << box->get_right();
+        // }
+        // qDebug() << "Piątek";
+        //     for (auto& box: temp_boxes){
+        //     if (box->get_left() < 2760 && box->get_left() >= 2060)
+        //         qDebug() << box->get_text() << box->get_left() << box->get_right();
+        // }
+
+        sort_courses(temp_boxes);
+    }
+}
+
+void MainWindow::sort_courses(const std::vector<Box*>& boxes){
+    for (const auto& box: boxes){
+        if (plan == PLAN::Semestralny){
+            std::vector<QString> text = box->get_text();
+            QString day = box->get_day();
+
+            std::map<QString, QString> data = {
+                                                {"5-hour", ""},
+                                                {"4-group", ""},
+                                                {"1-name", ""},
+                                                {"2-type", ""},
+                                                {"3-other", ""}};
+            auto it = data.end();
+            it--;
+
+            for (const auto& word: text){
+                // if (word == "Gibiec")
+                //     qDebug() << 1;
+                // qDebug() << word;
+                if (word.contains("(", Qt::CaseInsensitive)){
+                    it = data.begin();
+                    std::advance(it, 2);
+                    it->second += word + " ";
+                }
+                else if (word.contains("-", Qt::CaseInsensitive) || word.contains("•", Qt::CaseInsensitive)){
+                    it++;
+                }
+                else if ((word.contains("gr.", Qt::CaseInsensitive))|| (word.contains("gr,", Qt::CaseInsensitive)) || (data["4-group"].size() > 0 && data["4-group"].size() < 4)){
+                    it = data.begin();
+                    data["4-group"] += word;
+                }
+                else{
+                    it->second += word + " ";
+                }
             }
 
+            if (data["2-type"] == ""){
+                QStringList parts = data["1-name"].split(' ');
+                data["2-type"] = parts.last();
+                parts.pop_back();
+                if (data["2-type"]==""){
+                    data["2-type"] = parts.last();
+                    parts.pop_back();
+                }
+
+
+                if (!data["2-type"].contains("wyk") && parts.capacity() > 2) {
+                    data["2-type"] = parts.last() + ' ' + data["2-type"];
+                    parts.pop_back();
+                }
+                data["1-name"] = parts.join(' ');
+            }
+
+            AGHCourseData data_struct;
+            data_struct.day = day;
+            data_struct.group = data["4-group"];
+            data_struct.time = data["5-hour"];
+            data_struct.other_info = data["3-other"];
+            data["2-type"] = data["2-type"].toLower();
+            if (data["2-type"].back() == ' ')
+                data["2-type"].remove(data["2-type"].size()-1, 1);
+
+            bool is_added = false;
+            for (auto& course: courses){
+                if (course == data["1-name"]){
+                    course.add_group(data["2-type"], data_struct);
+                    is_added = true;
+                    break;
+                }
+            }
+            if (!is_added)
+                courses.push_back(Course(data["1-name"], data["2-type"], data_struct));
+        }
+
+        // if (plan == PLAN::Tygodniowy){
+            // TODO
+        // }
     }
+
+    for (const auto& course: courses)
+        course.print();
+
+    delete splash;
+    hide();
+    edit_dialog = new EditDialog(this);
+    edit_dialog->show();
+    QObject::connect(edit_dialog, SIGNAL(rejected()), this, SLOT(exit()));
 }
 
 

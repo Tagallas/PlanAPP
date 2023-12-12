@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "courses.h"
+#include "editdialog.h"
 
 #include <algorithm>
 #include <vector>
@@ -16,6 +17,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QFile>
+#include <QSplashScreen>
 
 
 QT_BEGIN_NAMESPACE
@@ -23,6 +25,11 @@ namespace Ui {
 class MainWindow;
 }
 QT_END_NAMESPACE
+
+enum class PLAN{
+    Semestralny,
+    Tygodniowy
+};
 
 class MainWindow : public QMainWindow
 {
@@ -33,16 +40,20 @@ public:
     ~MainWindow();
 
 public slots:
+    void exit();
     void recognize();
     void networkData();
+    void sort_courses(const std::vector<Box*>& boxes);
 
 private slots:
-    void on_pushButton_pressed() {recognize(); }
+    void on_pushButton_pressed();
 
 private:
     Ui::MainWindow *ui;
+    EditDialog *edit_dialog;
+    QSplashScreen *splash;
 
-    //std::vector<WeekDay> days;
+    PLAN plan = PLAN::Semestralny;
     std::map<WeekDay, std::vector<Box*>> days;
     std::vector<Course> courses;
 
