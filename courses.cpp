@@ -31,7 +31,7 @@ Course::operator QString() const{
     for (auto it = types_.begin(); it != types_.end(); ++it){
         os += "\t" + it->first + ": \n";
         for (const auto& course: it->second)
-            os += "\t\t" + course.day + ", " + course.group + ", " + course.time + ", " + course.other_info + "\n";
+            os += "\t\t" + course.day + ", " + course.group + ", " + course.time + ", " + course.other_info + ", " + QString::number(course.length) + "\n";
     }
 
     return os;
@@ -42,7 +42,7 @@ void Course::print() const{
     for (auto it = types_.begin(); it != types_.end(); ++it){
         qDebug() << "    " << it->first << ":";
         for (const auto& course: it->second)
-            qDebug() << "        " << course.day << ", " << course.group << ", " << course.time << ", " << course.other_info;
+            qDebug() << "        " << course.day << ", " << course.group << ", " << course.time << ", " << course.other_info + ", " + QString::number(course.length);
     }
 }
 

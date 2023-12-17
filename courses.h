@@ -47,7 +47,7 @@ public:
     QString group;
     QString time;
     QString other_info;
-
+    int length;
 };
 
 class Course
@@ -61,6 +61,9 @@ public:
 
     void print() const;
     void add_group(const QString& type, const AGHCourseData& data);
+
+    QString get_name() const {return name_; }
+    std::map<QString, std::vector<AGHCourseData>> get_types() const {return types_; }
 
 private:
     QString name_;
@@ -79,18 +82,18 @@ public:
     void set_divided(int div) {divide_width_ = div; }
     void update_bottom();
 
-    bool is_under(int height) const;// {return height > vertical_expected_bottom_; }
+    bool is_under(int height) const;
     int get_divide() const {return divide_width_; }
     int get_right() const {return right_; }
     int get_left() const {return left_; }
     int get_horizontal_left() const {return horizontal_text_left_; }
     int get_horizontal_right() const {return horizontal_text_right_; }
+    int get_expected_length() const {return 2 * ((vertical_text_center_[1]+vertical_text_center_[0])/2 - vertical_top_ + 7); }
     std::vector<QString> get_text() const {return text_; }
     QString get_day() const {return day_; }
 
 private:
     std::vector<QString> text_;
-    //QString text_;
     QString day_;
     int lines_ = 0;
     int divide_width_ = 1;

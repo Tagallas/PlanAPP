@@ -3,6 +3,8 @@
 
 #include "courses.h"
 #include "editdialog.h"
+#include "editwindow.h"
+#include "variables.h"
 
 #include <algorithm>
 #include <vector>
@@ -26,6 +28,7 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+
 enum class PLAN{
     Semestralny,
     Tygodniowy
@@ -43,14 +46,14 @@ public slots:
     void exit();
     void recognize();
     void networkData();
-    void sort_courses(const std::vector<Box*>& boxes);
+    void sort_courses(const std::vector<Box*>& boxes, int one_hour_height);
 
 private slots:
     void on_pushButton_pressed();
 
 private:
     Ui::MainWindow *ui;
-    EditDialog *edit_dialog;
+    EditWindow *edit_dialog;
     QSplashScreen *splash;
 
     PLAN plan = PLAN::Semestralny;

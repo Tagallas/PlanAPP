@@ -118,6 +118,7 @@ void MainWindow::networkData()
 
         std::vector<WeekDay> temp_days;
         std::vector<Box*> temp_boxes;
+        int one_hour_height = -1;
 
         // for (auto line: lines){
         //     QJsonObject line_obj = line.toObject();
@@ -140,6 +141,7 @@ void MainWindow::networkData()
         QJsonArray hour = hour_obj["Words"].toArray();
         int left_hour = hour.first()["Left"].toInt();
         int width_hour = hour.first()["Width"].toInt();
+        int top_hour = hour.first()["Top"].toInt();
 
         temp_days.push_back(WeekDay(left_hour+width_hour+2, left+(width/2)));
 
@@ -170,16 +172,21 @@ void MainWindow::networkData()
             QJsonArray words = line_obj["Words"].toArray();
             int left = words.first()["Left"].toInt();
 
-            if ((left < days.begin()->first.get_left() && words.size()>1) || (words.first()["WordText"].toString() == "-")){
+            if ((left < days.begin()->first.get_left()) || (words.first()["WordText"].toString() == "-")){
 
-                words.erase(words.begin());
-                line_obj = QJsonObject{
-                    {"LineText", line_obj["LineText"].toString()},
-                    {"MaxHeight", line_obj["MaxHeight"].toInt()},
-                    {"MinTop", line_obj["MinTop"].toInt()},
-                    {"Words", words}
-                };
-                left = words.first()["Left"].toInt();
+                if (one_hour_height == -1)
+                    one_hour_height = words.first()["Top"].toInt() - top_hour;
+
+                if  (words.size()>1){
+                    words.erase(words.begin());
+                    line_obj = QJsonObject{
+                        {"LineText", line_obj["LineText"].toString()},
+                        {"MaxHeight", line_obj["MaxHeight"].toInt()},
+                        {"MinTop", line_obj["MinTop"].toInt()},
+                        {"Words", words}
+                    };
+                    left = words.first()["Left"].toInt();
+                }
             }
 
             if (words.last()["WordText"].toString() == "-"){
@@ -301,11 +308,11 @@ void MainWindow::networkData()
         //         qDebug() << box->get_text() << box->get_left() << box->get_right();
         // }
 
-        sort_courses(temp_boxes);
+        sort_courses(temp_boxes, one_hour_height);
     }
 }
 
-void MainWindow::sort_courses(const std::vector<Box*>& boxes){
+void MainWindow::sort_courses(const std::vector<Box*>& boxes, int one_hour_height){
     for (const auto& box: boxes){
         if (plan == PLAN::Semestralny){
             std::vector<QString> text = box->get_text();
@@ -358,11 +365,23 @@ void MainWindow::sort_courses(const std::vector<Box*>& boxes){
                 data["1-name"] = parts.join(' ');
             }
 
+            float expected_length = (float(box->get_expected_length())/float(one_hour_height)) * 60.;
+            float min_dispreparcy = 100000;
+            float length = 90;
+            for (float c_length: COURSE_LENGTHS){
+                float dispreparcy = abs(c_length - expected_length);
+                if (min_dispreparcy > dispreparcy){
+                    length = c_length;
+                    min_dispreparcy = dispreparcy;
+                }
+            }
+
             AGHCourseData data_struct;
             data_struct.day = day;
             data_struct.group = data["4-group"];
             data_struct.time = data["5-hour"];
             data_struct.other_info = data["3-other"];
+            data_struct.length = length;
             data["2-type"] = data["2-type"].toLower();
             if (data["2-type"].back() == ' ')
                 data["2-type"].remove(data["2-type"].size()-1, 1);
@@ -384,14 +403,14 @@ void MainWindow::sort_courses(const std::vector<Box*>& boxes){
         // }
     }
 
-    for (const auto& course: courses)
-        course.print();
+    // for (const auto& course: courses)
+    //     course.print();
 
+    setDisabled(false);
     delete splash;
     hide();
-    edit_dialog = new EditDialog(this);
+    edit_dialog = new EditWindow(courses, this);
     edit_dialog->show();
-    QObject::connect(edit_dialog, SIGNAL(rejected()), this, SLOT(exit()));
 }
 
 
